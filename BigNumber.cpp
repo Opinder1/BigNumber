@@ -4,10 +4,11 @@
 
 #include <vector>
 
-using Base10Number = std::vector<unsigned char>;
-using Base256Number = std::vector<unsigned char>;
+template<size_t Base>
+using BaseNumber = std::vector<unsigned char>;
 
-void Base10Multiply(Base10Number& number, size_t value)
+template<size_t Base>
+void BaseMultiply(BaseNumber<Base>& number, size_t value)
 {
     if (value == 0)
     {
@@ -25,17 +26,18 @@ void Base10Multiply(Base10Number& number, size_t value)
             number.push_back(0);
         }
 
-        size_t val = (number[i] * value) + (carry % 10);
+        size_t val = (number[i] * value) + (carry % Base);
 
-        number[i] = val % 10;
+        number[i] = val % Base;
         
-        carry = (carry / 10) + (val / 10);
+        carry = (carry / Base) + (val / Base);
 
         i++;
     }
 }
 
-void Base10Add(Base10Number& number, size_t value)
+template<size_t Base>
+void BaseAdd(BaseNumber<Base>& number, size_t value)
 {
     size_t carry = 0;
     size_t i = 0;
@@ -47,18 +49,19 @@ void Base10Add(Base10Number& number, size_t value)
             number.push_back(0);
         }
 
-        size_t val = number[i] + (value % 10) + carry;
+        size_t val = number[i] + (value % Base) + carry;
 
-        number[i] = val % 10;
+        number[i] = val % Base;
         
-        carry = (carry / 10) + (val / 10);
+        carry = (carry / Base) + (val / Base);
 
-        value /= 10;
+        value /= Base;
         i++;
     }
 }
 
-void Base10Add(Base10Number& number, const Base10Number& value)
+template<size_t Base>
+void BaseAdd(BaseNumber<Base>& number, const BaseNumber<Base>& value)
 {
     if (number.size() < value.size())
     {
@@ -75,23 +78,25 @@ void Base10Add(Base10Number& number, const Base10Number& value)
             number.push_back(0);
         }
 
-        size_t val = number[i] + value[i] + (carry % 10);
+        size_t val = number[i] + value[i] + (carry % Base);
 
-        number[i] = val % 10;
+        number[i] = val % Base;
         
-        carry = (carry / 10) + (val / 10);
+        carry = (carry / Base) + (val / Base);
 
         i++;
     }
 }
 
-Base10Number Base10Power(size_t value, size_t power)
+template<size_t Base>
+BaseNumber<Base> BasePower(size_t value, size_t power)
 {
-    Base10Number number;
+    BaseNumber<Base> number;
     
-    const double log10_v = std::log10(value);
+    constexpr const double log_base = std::log(Base);
+    const double log_value = std::log(value) / log_base;
 
-    size_t end_digits = (power * log10_v) + 1;
+    size_t end_digits = (power * log_value) + 1;
 
     if (number.size() < end_digits)
     {
@@ -102,13 +107,13 @@ Base10Number Base10Power(size_t value, size_t power)
 
     for (size_t p = 0; p < power; p++)
     {
-        Base10Multiply(number, value);
+        BaseMultiply<Base>(number, value);
     }
 
     return number;
 }
 
-void Base10Print(const Base10Number& number)
+void Base10Print(const BaseNumber<10>& number)
 {
     for (size_t i = number.size(); i --> 0;)
     {
@@ -117,28 +122,37 @@ void Base10Print(const Base10Number& number)
     printf("\n");
 }
 
-Base10Number Base256ToBase10(const Base256Number& number)
+void Base100Print(const BaseNumber<100>& number)
 {
-    Base10Number total;
-    Base10Number multi;
+    for (size_t i = number.size(); i --> 0;)
+    {
+        printf("%.2u", number[i]);
+    }
+    printf("\n");
+}
+
+BaseNumber<10> Base256ToBase10(const BaseNumber<256>& number)
+{
+    BaseNumber<10> total;
+    BaseNumber<10> multi;
 
     multi.resize(1);
     multi[0] = 1;
 
     for (size_t i = 0; i < number.size(); i++)
     {
-        Base10Number temp_multi = multi;
+        BaseNumber<10> temp_multi = multi;
 
         unsigned char value = number[i];
 
         if (value != 0)
         {
-            Base10Multiply(temp_multi, value);
+            BaseMultiply<10>(temp_multi, value);
 
-            Base10Add(total, temp_multi);
+            BaseAdd<10>(total, temp_multi);
         }
 
-        Base10Multiply(multi, 256);
+        BaseMultiply<10>(multi, 256);
     }
 
     return total;
@@ -148,13 +162,18 @@ int main()
 {
     for (size_t i = 0; i < 33; i++)
     {
-        Base10Print(Base10Power(2, i));
+        Base10Print(BasePower<10>(2, i));
+    }
+
+    for (size_t i = 0; i < 33; i++)
+    {
+        Base100Print(BasePower<100>(2, i));
     }
 
     size_t i = 12345125;
     char* ip = (char*)&i;
 
-    Base256Number number;
+    BaseNumber<256> number;
     number.resize(8);
     std::copy(ip, ip + sizeof(size_t), number.data());
 
