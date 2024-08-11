@@ -5,7 +5,9 @@
 #include <vector>
 
 template<size_t Base>
-using BaseNumber = std::vector<unsigned char>;
+struct BaseNumber : std::vector<uint64_t> {};
+
+const size_t k_max_pow_10 = 10000000000000000000u;
 
 template<size_t Base>
 void BaseMultiply(BaseNumber<Base>& number, size_t value)
@@ -113,20 +115,18 @@ BaseNumber<Base> BasePower(size_t value, size_t power)
     return number;
 }
 
-void Base10Print(const BaseNumber<10>& number)
+template<size_t Base>
+void BasePrint(const BaseNumber<Base>& number)
 {
-    for (size_t i = number.size(); i --> 0;)
-    {
-        printf("%u", number[i]);
-    }
-    printf("\n");
-}
+    constexpr const size_t zeros = std::log10(Base);
 
-void Base100Print(const BaseNumber<100>& number)
-{
-    for (size_t i = number.size(); i --> 0;)
+    size_t i = number.size();
+
+    printf("%u", number[--i]);
+
+    for (; i --> 0;)
     {
-        printf("%.2u", number[i]);
+        printf("%.*u", zeros, number[i]);
     }
     printf("\n");
 }
@@ -160,14 +160,24 @@ BaseNumber<10> Base256ToBase10(const BaseNumber<256>& number)
 
 int main()
 {
-    for (size_t i = 0; i < 33; i++)
+    for (size_t i = 1; i < 512; i *= 2)
     {
-        Base10Print(BasePower<10>(2, i));
+        BasePrint<10>(BasePower<10>(2, i));
     }
 
-    for (size_t i = 0; i < 33; i++)
+    for (size_t i = 1; i < 512; i *= 2)
     {
-        Base100Print(BasePower<100>(2, i));
+        BasePrint<100>(BasePower<100>(2, i));
+    }
+
+    for (size_t i = 1; i < 512; i *= 2)
+    {
+        BasePrint<1000>(BasePower<1000>(2, i));
+    }
+
+    for (size_t i = 1; i < 256; i *= 2)
+    {
+        BasePrint<k_max_pow_10>(BasePower<k_max_pow_10>(2, i));
     }
 
     size_t i = 12345125;
@@ -179,7 +189,7 @@ int main()
 
     try
     {
-        Base10Print(Base256ToBase10(number));
+        BasePrint<10>(Base256ToBase10(number));
     }
     catch (std::exception& e)
     {
