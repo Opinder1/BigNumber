@@ -10,6 +10,50 @@ struct BaseNumber : std::vector<uint64_t> {};
 const uint64_t k_max_base = UINT32_MAX - 1;
 const uint64_t k_max_pow_10 = 1000000000u;
 
+template<uint64_t Base>
+BaseNumber<Base> BaseMake(uint64_t value)
+{
+    BaseNumber<Base> out;
+
+    while (value != 0)
+    {
+        out.push_back(value % Base);
+
+        value /= Base;
+    }
+
+    return out;
+}
+
+template<uint64_t Base>
+int8_t BaseCompare(const BaseNumber<Base>& first, const BaseNumber<Base>& second)
+{
+    if (first.size() > second.size())
+    {
+        return 1;
+    }
+
+    if (first.size() < second.size())
+    {
+        return -1;
+    }
+
+    for (size_t i = 0; i < first.size(); i++)
+    {
+        if (first[i] > second[i])
+        {
+            return 1;
+        }
+
+        if (first[i] < second[i])
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 template<size_t Base>
 void BaseMultiply(BaseNumber<Base>& number, uint64_t value)
 {
@@ -37,6 +81,12 @@ void BaseMultiply(BaseNumber<Base>& number, uint64_t value)
 
         i++;
     }
+}
+
+template<size_t Base>
+void BaseMultiply(BaseNumber<Base>& number, const BaseNumber<Base>& value)
+{
+
 }
 
 template<uint64_t Base>
@@ -92,6 +142,18 @@ void BaseAdd(BaseNumber<Base>& number, const BaseNumber<Base>& value)
 }
 
 template<uint64_t Base>
+void BaseSubtract(BaseNumber<Base>& number, uint64_t value)
+{
+
+}
+
+template<uint64_t Base>
+void BaseSubtract(BaseNumber<Base>& number, const BaseNumber<Base>& value)
+{
+
+}
+
+template<uint64_t Base>
 BaseNumber<Base> BasePower(uint64_t value, uint64_t power)
 {
     BaseNumber<Base> number;
@@ -114,6 +176,44 @@ BaseNumber<Base> BasePower(uint64_t value, uint64_t power)
     }
 
     return number;
+}
+
+template<uint64_t Base>
+void BaseShift(BaseNumber<Base>& number, uint64_t shift_amount)
+{
+
+}
+
+template<uint64_t Base>
+BaseNumber<Base> BaseDivide(const BaseNumber<Base>& number, const BaseNumber<Base>& value)
+{
+    BaseNumber<Base> out;
+    BaseNumber<Base> attempt;
+    const BaseNumber<Base> one = BaseMake<Base>(1);
+
+    BaseNumber<Base> pow2 = BasePower<Base>(2, number.size());
+
+    while (BaseCompare<Base>(pow2, one) == 1)
+    {
+        BaseNumber<Base> attempt_change = pow2;
+        BaseMultiply<Base>(attempt_change, value);
+
+        if (BaseCompare<Base>(attempt, number) == 1)
+        {
+            BaseAdd<Base>(out, pow2);
+            BaseAdd<Base>(attempt, attempt_change);
+        }
+
+        if (BaseCompare<Base>(attempt, number) == -1)
+        {
+            BaseSubtract<Base>(out, pow2);
+            BaseSubtract<Base>(attempt, attempt_change);
+        }
+
+        BaseShift<Base>(pow2, 1);
+    }
+
+    return out;
 }
 
 template<uint64_t BaseFrom, uint64_t BaseTo>
@@ -145,21 +245,6 @@ BaseNumber<BaseTo> BaseConvert(const BaseNumber<BaseFrom>& number)
 }
 
 template<uint64_t Base>
-BaseNumber<Base> BaseMake(uint64_t value)
-{
-    BaseNumber<Base> out;
-
-    while (value != 0)
-    {
-        out.push_back(value % Base);
-
-        value /= Base;
-    }
-
-    return out;
-}
-
-template<uint64_t Base>
 void BasePrint(const BaseNumber<Base>& number)
 {
     constexpr const size_t zeros = std::log10(Base);
@@ -188,6 +273,8 @@ int main()
     }
 
     BaseNumber<k_max_base> number = BaseMake<k_max_base>(12345125);
+
+    BaseDivide(number, BaseMake<k_max_base>(123));
 
     BasePrint<k_max_pow_10>(BaseConvert<k_max_base, k_max_pow_10>(number));
 }
